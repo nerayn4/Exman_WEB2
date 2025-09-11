@@ -1,65 +1,173 @@
+
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const YAML = require('yamljs');
-const swaggerUi = require('swagger-ui-express');
 const fs = require('fs');
-
+const path = require('path');
 const app = express();
 
-// Middlewares
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
+app.use(express.urlencoded({ extended: true }));
 
-// Swagger Docs (safe load)
-let swaggerDocument = null;
+
+const DATA_FILE = path.join(__dirname, '..', 'data.json'); // expense-tracker-backend/data.json
+let store = {
+  expenses: [],
+  incomes: [],
+  nextId: 1
+};
+
+
 try {
-  const swaggerPath = path.join(__dirname, 'docs', 'openapi.yaml');
-  if (fs.existsSync(swaggerPath)) {
-    swaggerDocument = YAML.load(swaggerPath);
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-  } else {
-    console.warn('Swagger file not found at', swaggerPath);
+  if (fs.existsSync(DATA_FILE)) {
+    const raw = fs.readFileSync(DATA_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      store = { ...store, ...parsed };
+    
+      store.nextId = store.nextId || (Math.max(
+        0,
+        ...store.expenses.map(e => Number(e.id) || 0),
+        ...store.incomes.map(i => Number(i.id) || 0)
+      ) + 1);
+      console.log('Loaded data from', DATA_FILE);
+    }
   }
 } catch (err) {
-  console.error('Erreur lors du chargement de Swagger:', err);
+  console.warn('Could not load data file:', err);
 }
 
-// Routes 
-app.use('/api/expenses', require('./src/routes/expenseRoutes'));
-app.use('/api/incomes', require('./src/routes/incomeRoutes'));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Connect MongoDB
-const mongoUri = process.env.MONGO_URI;
-if (!mongoUri) {
-  console.error('MONGO_URI non défini dans .env — impossible de se connecter à MongoDB');
-  process.exit(1);
+function persist() {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error persisting data:', err);
+  }
 }
 
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
 
+function genId() {
+  return String(store.nextId++);
+}
 
-mongoose.connection.on('error', err => console.error('Mongoose connection error:', err));
-mongoose.connection.once('open', () => console.log('Mongoose connection open'));
-
-// Start server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-// Graceful shutdown example
-process.on('SIGINT', async () => {
-  console.log('SIGINT received — closing MongoDB connection and exiting');
-  await mongoose.disconnect();
-  process.exit(0);
+app.get('/api/expenses', (req, res) => {
+  res.json(store.expenses);
 });
+
+app.get('/api/expenses/:id', (req, res) => {
+  const item = store.expenses.find(e => e.id === req.params.id);
+  if (!item) return res.status(404).json({ error: 'Expense not found' });
+  res.json(item);
+});
+
+app.post('/api/expenses', (req, res) => {
+  const { amount, description, date, category } = req.body;
+  if (amount == null) return res.status(400).json({ error: 'amount is required' });
+
+  const expense = {
+    id: genId(),
+    amount: Number(amount),
+    description: description || '',
+    date: date || new Date().toISOString(),
+    category: category || 'general',
+    createdAt: new Date().toISOString()
+  };
+  store.expenses.push(expense);
+  persist();
+  res.status(201).json(expense);
+});
+
+app.put('/api/expenses/:id', (req, res) => {
+  const idx = store.expenses.findIndex(e => e.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Expense not found' });
+
+  const { amount, description, date, category } = req.body;
+  const current = store.expenses[idx];
+  const updated = {
+    ...current,
+    amount: amount != null ? Number(amount) : current.amount,
+    description: description != null ? description : current.description,
+    date: date != null ? date : current.date,
+    category: category != null ? category : current.category,
+    updatedAt: new Date().toISOString()
+  };
+  store.expenses[idx] = updated;
+  persist();
+  res.json(updated);
+});
+
+app.delete('/api/expenses/:id', (req, res) => {
+  const idx = store.expenses.findIndex(e => e.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Expense not found' });
+  const removed = store.expenses.splice(idx, 1)[0];
+  persist();
+  res.json({ deleted: removed });
+});
+
+app.get('/api/incomes', (req, res) => res.json(store.incomes));
+
+app.get('/api/incomes/:id', (req, res) => {
+  const it = store.incomes.find(i => i.id === req.params.id);
+  if (!it) return res.status(404).json({ error: 'Income not found' });
+  res.json(it);
+});
+
+app.post('/api/incomes', (req, res) => {
+  const { amount, source, date } = req.body;
+  if (amount == null) return res.status(400).json({ error: 'amount is required' });
+
+  const income = {
+    id: genId(),
+    amount: Number(amount),
+    source: source || 'unknown',
+    date: date || new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  };
+  store.incomes.push(income);
+  persist();
+  res.status(201).json(income);
+});
+
+app.put('/api/incomes/:id', (req, res) => {
+  const idx = store.incomes.findIndex(i => i.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Income not found' });
+
+  const { amount, source, date } = req.body;
+  const curr = store.incomes[idx];
+  const upd = {
+    ...curr,
+    amount: amount != null ? Number(amount) : curr.amount,
+    source: source != null ? source : curr.source,
+    date: date != null ? date : curr.date,
+    updatedAt: new Date().toISOString()
+  };
+  store.incomes[idx] = upd;
+  persist();
+  res.json(upd);
+});
+
+app.delete('/api/incomes/:id', (req, res) => {
+  const idx = store.incomes.findIndex(i => i.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Income not found' });
+  const removed = store.incomes.splice(idx, 1)[0];
+  persist();
+  res.json({ deleted: removed });
+});
+
+
+app.get('/', (req, res) => res.json({ status: 'ok', message: 'Backend running (in-memory DB)' }));
+
+
+const PORT = process.env.PORT || 8080;
+const srv = app.listen(PORT, () => console.log(`Server running on port ${PORT} (in-memory DB)`));
+
+async function shutdown() {
+  console.log('Shutting down, persisting data...');
+  try { persist(); } catch (e) { console.error(e); }
+  srv.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

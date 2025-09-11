@@ -1,0 +1,14 @@
+{
+  "expenses": [
+    {
+      "id": "2",
+      "amount": 12.5,
+      "description": "cafe",
+      "date": "2025-09-11T10:34:18.553Z",
+      "category": "food",
+      "createdAt": "2025-09-11T10:34:18.553Z"
+    }
+  ],
+  "incomes": [],
+  "nextId": 3
+}
