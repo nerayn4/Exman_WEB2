@@ -1,29 +1,18 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Income = sequelize.define('Income', {
+const Category = sequelize.define('Category', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  amount: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-  source: {
+  name: {
     type: DataTypes.STRING,
-  },
-  date: {
-    type: DataTypes.DATE,
-    allowNull: false,
-  },
-  userId: {
-    type: DataTypes.UUID,
     allowNull: false,
   },
 }, {
   timestamps: true,
 });
 
-module.exports = Income;
+module.exports = Category;

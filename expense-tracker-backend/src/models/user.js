@@ -1,29 +1,23 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Income = sequelize.define('Income', {
+const User = sequelize.define('User', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  amount: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-  source: {
+  email: {
     type: DataTypes.STRING,
-  },
-  date: {
-    type: DataTypes.DATE,
+    unique: true,
     allowNull: false,
   },
-  userId: {
-    type: DataTypes.UUID,
+  password: {
+    type: DataTypes.STRING,
     allowNull: false,
   },
 }, {
   timestamps: true,
 });
 
-module.exports = Income;
+module.exports = User;
