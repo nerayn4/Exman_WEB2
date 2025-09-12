@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 
-
+dotenv.config();
 require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
