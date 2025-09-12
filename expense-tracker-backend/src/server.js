@@ -1,9 +1,20 @@
+<<<<<<< HEAD
 // Vérifiez que ceci est la SEULE déclaration d'express
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+=======
+import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+
+dotenv.config();
+const fs = require('fs');
+>>>>>>> d7ad46f1b04b9e6f1f1d37d8ecfb8778c14316a2
 const path = require('path');
 require('dotenv').config();
 
