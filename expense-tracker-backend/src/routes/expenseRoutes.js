@@ -1,13 +1,16 @@
-const express = require('express');
+// routes/expenseRoutes.js
+import express from "express";
+import { protect } from "../middleware/auth.js";
+import * as expenseController from "../controllers/expenseController.js";
+import { uploadReceipt } from "../utils/upload.js";
+
 const router = express.Router();
-const upload = require('../utils/fileUpload');
-const controller = require('../controllers/expenseController');
+router.use(protect);
 
-router.get('/', controller.getExpenses);
-router.post('/', upload.single('receipt'), controller.createExpense);
-router.get('/:id', controller.getExpense);
-router.put('/:id', upload.single('receipt'), controller.updateExpense);
-router.delete('/:id', controller.deleteExpense);
+router.get("/", expenseController.getExpenses);
+router.post("/", uploadReceipt, expenseController.createExpense);
+router.get("/:id", expenseController.getExpense);
+router.put("/:id", uploadReceipt, expenseController.updateExpense);
+router.delete("/:id", expenseController.deleteExpense);
 
-module.exports = router;
-   
+export default router;

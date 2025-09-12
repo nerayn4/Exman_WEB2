@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend for Personal Expense Tracker",
   "main": "src/server.js",
+  "type": "module",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon --watch src --ext js,json --exec \"node src/server.js\"",
@@ -12,37 +13,22 @@
     "test:server": "jest tests/server-basic.test.js --testTimeout=5000"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^7.5.0",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.3.1",
-    "joi": "^17.9.2",
-    "helmet": "^7.0.0",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
-    "express-rate-limit": "^6.8.1",
-    "multer": "^1.4.5-lts.1"
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "joi": "^18.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.18.1",
+    "multer": "^2.0.2"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "supertest": "^6.3.3",
     "mongodb-memory-server": "^8.15.1",
     "nodemon": "^3.0.1",
-    "@babel/core": "^7.23.0",
-    "@babel/preset-env": "^7.22.20",
-    "babel-jest": "^29.7.0"
-  },
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "targets": {
-            "node": "current"
-          }
-        }
-      ]
-    ]
+    "supertest": "^6.3.3"
   },
   "engines": {
     "node": ">=16"

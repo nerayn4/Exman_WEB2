@@ -1,92 +1,86 @@
-const dashboardCalculations = require('../models/Index');
+import dashboardCalculations from "../models/Index.js";
 
-exports.getDashboardData = async (req, res) => {
+export const getDashboardData = async (req, res) => {
   try {
     const { month, year } = req.query;
     const currentDate = new Date();
     const currentMonth = month || currentDate.getMonth() + 1;
     const currentYear = year || currentDate.getFullYear();
-    
+
     const summary = await dashboardCalculations.calculateMonthlySummary(
-      req.userId, 
-      currentYear, 
-      currentMonth
-    );
-    
-    const expensesByCategory = await dashboardCalculations.calculateExpensesByCategory(
-      req.userId,
+      req.user._id,
       currentYear,
       currentMonth
     );
-    
-    const trends = await dashboardCalculations.calculateMonthlyTrends(req.userId, 6);
-    
+
+    const expensesByCategory = await dashboardCalculations.calculateExpensesByCategory(
+      req.user._id,
+      currentYear,
+      currentMonth
+    );
+
+    const trends = await dashboardCalculations.calculateMonthlyTrends(req.user._id, 6);
+
     const alerts = [];
     if (summary.balance < 0) {
       alerts.push({
-        type: 'warning',
-        message: `Budget dépassé de $${Math.abs(summary.balance).toFixed(2)} ce mois-ci`
+        type: "warning",
+        message: `Budget dépassé de $${Math.abs(summary.balance).toFixed(2)} ce mois-ci`,
       });
     }
-    
-    if (summary.totalExpenses > (summary.totalIncomes * 0.8)) {
+    if (summary.totalExpenses > summary.totalIncomes * 0.8) {
       alerts.push({
-        type: 'info',
-        message: 'Vous avez dépensé plus de 80% de vos revenus ce mois-ci'
+        type: "info",
+        message: "Vous avez dépensé plus de 80% de vos revenus ce mois-ci",
       });
     }
-    
+
     res.json({
-      summary,
-      expensesByCategory,
-      trends,
-      alerts,
-      period: {
-        month: currentMonth,
-        year: currentYear,
-        monthName: new Date(currentYear, currentMonth - 1).toLocaleString('default', { month: 'long' })
-      }
+      success: true,
+      data: {
+        summary,
+        expensesByCategory,
+        trends,
+        alerts,
+        period: {
+          month: currentMonth,
+          year: currentYear,
+          monthName: new Date(currentYear, currentMonth - 1).toLocaleString("default", { month: "long" }),
+        },
+      },
     });
-    
-  } catch (error) {
-    console.error('Dashboard error:', error);
-    res.status(500).json({ 
-      message: 'Error fetching dashboard data', 
-      error: error.message 
-    });
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-exports.getChartData = async (req, res) => {
+export const getChartData = async (req, res) => {
   try {
-    const { chartType, timeframe } = req.params;
-    
+    const { chartType } = req.params;
     let data;
+
     switch (chartType) {
-      case 'expenses-by-category':
+      case "expenses-by-category":
         const currentDate = new Date();
         data = await dashboardCalculations.calculateExpensesByCategory(
-          req.userId,
+          req.user._id,
           currentDate.getFullYear(),
           currentDate.getMonth() + 1
         );
         break;
-        
-      case 'monthly-trends':
-        data = await dashboardCalculations.calculateMonthlyTrends(req.userId, 12);
+
+      case "monthly-trends":
+        data = await dashboardCalculations.calculateMonthlyTrends(req.user._id, 12);
         break;
-        
+
       default:
-        return res.status(400).json({ message: 'Invalid chart type' });
+        return res.status(400).json({ success: false, message: "Invalid chart type" });
     }
-    
-    res.json(data);
-    
-  } catch (error) {
-    console.error('Chart data error:', error);
-    res.status(500).json({ 
-      message: 'Error fetching chart data', 
-      error: error.message 
-    });
+
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("Chart data error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

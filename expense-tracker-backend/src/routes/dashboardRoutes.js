@@ -1,10 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const dashboardController = require('../controllers/dashboardController');
-const auth = require('../middleware/auth');
-router.use(auth);
-router.get('/', dashboardController.getDashboardData);
-router.get('/charts/:chartType', dashboardController.getChartData);
-router.get('/charts/:chartType/:timeframe', dashboardController.getChartData);
+import express from "express";
+import * as dashboardController from "../controllers/dashboardController.js";
+import { protect } from "../middleware/auth.js";
 
-module.exports = router;
+const router = express.Router();
+router.use(protect);
+router.get("/", dashboardController.getDashboardData);
+router.get("/charts/:chartType", dashboardController.getChartData);
+router.get("/charts/:chartType/:timeframe", dashboardController.getChartData);
+
+export default router;

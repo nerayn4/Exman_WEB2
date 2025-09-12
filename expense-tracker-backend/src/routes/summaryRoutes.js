@@ -1,10 +1,18 @@
-const express = require('express');
+import express from "express";
+import * as summaryController from "../controllers/summaryController.js";
+import { protect } from "../middleware/auth.js";
+
 const router = express.Router();
-const summaryController = require('../controllers/summaryController');
-const auth = require('../middleware/auth');
-router.use(auth);
-router.get('/monthly', summaryController.getMonthlySummary);
-router.get('/', summaryController.getSummaryByDateRange);
-router.get('/alerts', summaryController.getBudgetAlerts);
-router.get('/overview', summaryController.getOverview);
-module.exports = router;
+
+router.use(protect);
+
+router.get("/monthly", summaryController.getMonthlySummary);
+
+router.get("/", summaryController.getSummaryByDateRange);
+
+router.get("/alerts", summaryController.getBudgetAlerts);
+
+
+router.get("/overview", summaryController.getOverview);
+
+export default router;

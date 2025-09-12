@@ -1,12 +1,20 @@
-const express = require('express');
+import express from "express";
+import * as incomeController from "../controllers/incomeController.js";
+import { protect } from "../middleware/auth.js";
+
 const router = express.Router();
-const controller = require('../controllers/incomeController');
 
-router.get('/', controller.getIncomes);
-router.post('/', controller.createIncome);
-router.get('/:id', controller.getIncome);
-router.put('/:id', controller.updateIncome);
-router.delete('/:id', controller.deleteIncome);
 
-module.exports = router;
+router.use(protect);
 
+router.get("/", incomeController.getIncomes);
+
+router.post("/", incomeController.createIncome);
+
+router.get("/:id", incomeController.getIncome);
+
+router.put("/:id", incomeController.updateIncome);
+
+router.delete("/:id", incomeController.deleteIncome);
+
+export default router;
