@@ -1,41 +1,80 @@
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-function Navbar() {
+export default function Navbar() {
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  function logout() {
+  const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
-  }
+  };
 
   return (
-    <nav className="px-6 py-3 bg-blue-600 text-white flex justify-between items-center shadow-md">
-      <div className="flex gap-4">
-        {token && (
-          <>
-            <Link className="hover:underline" to="/expenses">Dépenses</Link>
-            <Link className="hover:underline" to="/expenses/new">Nouvelle Dépense</Link>
-          </>
-        )}
-      </div>
-      <div className="flex gap-4">
-        {!token ? (
-          <>
-            <Link className="hover:underline" to="/login">Login</Link>
-            <Link className="hover:underline" to="/signup">Signup</Link>
-          </>
-        ) : (
-          <button 
-            onClick={logout} 
-            className="bg-red-500 px-3 py-1 rounded hover:bg-red-700"
-          >
-            Logout
-          </button>
-        )}
+    <nav className="bg-[#2a2a2a] text-[#D4AF37] py-6 shadow-md">
+      <div className="max-w-screen-xl mx-auto px-8 flex justify-between items-center">
+        <Link to="/" className="text-3xl font-bold tracking-wide hover:text-[#FFD700]">
+          ExpenseTracker
+        </Link>
+
+        <div className="flex items-center gap-6">
+          {token ? (
+            <>
+              <div className="relative">
+                <button
+                  onClick={() => setOpen(!open)}
+                  className="hover:text-[#FFD700] px-4 py-2 rounded-md border border-[#D4AF37]"
+                >
+                  Features ▾
+                </button>
+                {open && (
+                  <div className="absolute mt-2 bg-[#1a1a1a] text-[#D4AF37] rounded-md shadow-lg w-48 z-50 border border-[#333]">
+                    {[
+                      { label: "Dashboard", path: "/dashboard" },
+                      { label: "Expenses", path: "/expenses" },
+                      { label: "Incomes", path: "/incomes" },
+                      { label: "Categories", path: "/categories" },
+                      { label: "Profile", path: "/profile" },
+                    ].map(({ label, path }) => (
+                      <Link
+                        key={path}
+                        to={path}
+                        className="block px-4 py-2 hover:bg-[#2a2a2a]"
+                        onClick={() => setOpen(false)}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-white"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="bg-[#D4AF37] text-black px-4 py-2 rounded-md hover:bg-[#FFD700]"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="bg-[#FFD700] text-black px-4 py-2 rounded-md hover:bg-[#D4AF37]"
+              >
+                Signup
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );
 }
-
-export default Navbar;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import api from "../../api";   
+import api from "../../api";
 import { useNavigate } from "react-router-dom";
 
 function SignupPage() {
@@ -18,27 +18,32 @@ function SignupPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <form 
-        onSubmit={handleSubmit} 
-        className="bg-white shadow-lg rounded p-6 w-80 flex flex-col gap-3"
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-200">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-[#1a1a1a] shadow-xl rounded-lg p-8 w-96 flex flex-col gap-5 border border-[#D4AF37]"
       >
-        <h1 className="text-xl font-bold text-center">Créer un compte</h1>
+        <h1 className="text-2xl font-[Orbitron] text-[#D4AF37] text-center tracking-wide">
+          Créer un compte
+        </h1>
+
         <input
-          className="border p-2 rounded"
+          className="bg-black border border-[#D4AF37] text-white p-3 rounded focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
-          className="border p-2 rounded"
+          className="bg-black border border-[#D4AF37] text-white p-3 rounded focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
           type="password"
           placeholder="Mot de passe"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button className="bg-green-600 text-white rounded py-2 hover:bg-green-800">
+        <button
+          className="bg-[#D4AF37] text-black font-semibold rounded py-3 hover:bg-[#c9a233] transition duration-200"
+        >
           S’inscrire
         </button>
       </form>

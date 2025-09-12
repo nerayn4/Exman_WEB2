@@ -1,31 +1,84 @@
 import { useEffect, useState } from "react";
-import api from "../../api";   
+import { Link } from "react-router-dom";
+import api from "../../api";
 
-function ExpensesPage() {
+export default function ExpensesPage() {
   const [expenses, setExpenses] = useState([]);
 
+  const fetchExpenses = async () => {
+    const res = await api.get("/expenses");
+    setExpenses(res.data);
+  };
+
   useEffect(() => {
-    api.get("/expenses").then((res) => setExpenses(res.data));
+    fetchExpenses();
   }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Mes Dépenses</h1>
-      <ul className="space-y-2">
-        {expenses.map((exp) => (
-          <li 
-            key={exp._id} 
-            className="border p-3 rounded shadow-sm flex justify-between"
-          >
-            <span>{exp.category} - {exp.amount}€</span>
-            <span className="text-sm text-gray-500">
-              {new Date(exp.date).toLocaleDateString()}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+  <div className="bg-black text-[#D4AF37] min-h-screen p-6">
+    <h2 className="text-2xl font-bold mb-4">Expenses</h2>
+    <Link
+      to="/expenses/new"
+      className="bg-[#D4AF37] text-black px-4 py-2 rounded mb-4 inline-block hover:bg-[#FFD700]"
+    >
+      + New Expense
+    </Link>
 
-export default ExpensesPage;
+    <table className="w-full bg-[#1a1a1a] shadow rounded text-[#D4AF37]">
+      <thead className="bg-[#2a2a2a]">
+        <tr>
+          <th className="p-2 text-left">Amount</th>
+          <th className="p-2 text-left">Date</th>
+          <th className="p-2 text-left">Category</th>
+          <th className="p-2 text-left">Type</th>
+          <th className="p-2 text-left">Receipt</th>
+          <th className="p-2 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {expenses.map((exp) => (
+          <tr key={exp.id} className="border-t border-[#333] hover:bg-[#2a2a2a]">
+            <td className="p-2">${exp.amount}</td>
+            <td className="p-2">{exp.date}</td>
+            <td className="p-2">{exp.categoryName}</td>
+            <td className="p-2">{exp.type}</td>
+            <td className="p-2">
+              {exp.hasReceipt ? (
+                <a
+                  href={`${import.meta.env.VITE_API_URL}/receipts/${exp.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#FFD700] underline hover:text-[#D4AF37]"
+                >
+                  View Receipt
+                </a>
+              ) : (
+                "—"
+              )}
+            </td>
+            <td className="p-2">
+              <Link
+                to={`/expenses/${exp.id}/edit`}
+                className="text-[#FFD700] mr-2 hover:underline"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={async () => {
+                  if (!window.confirm("Delete this expense?")) return;
+                  await api.delete(`/expenses/${exp.id}`);
+                  fetchExpenses();
+                }}
+                className="text-red-500 hover:underline"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+}
