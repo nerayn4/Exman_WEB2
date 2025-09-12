@@ -1,9 +1,33 @@
+import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
+
 
 require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
+
+//middlevare
+app.use(express.json());
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+
+// DB + Server
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB connected");
+    app.listen(process.env.PORT, () =>
+      console.log(`🚀 Server running on port ${process.env.PORT}`)
+    );
+  })
+  .catch((err) => console.error("❌ DB connection error:", err));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
