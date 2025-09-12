@@ -39,7 +39,7 @@ export default function DashboardPage() {
     async function fetchSummary() {
       try {
         const res = await fetch(
-          `http://localhost:8080/api/summary/monthly?month=${filters.month}`,
+          `http://localhost:5000/api/summary/monthly?month=${filters.month}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
@@ -57,7 +57,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchAlerts() {
       try {
-        const res = await fetch("http://localhost:8080/api/summary/alerts", {
+        const res = await fetch("http://localhost:5000/api/summary/alerts", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -90,7 +90,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Pie Chart */}
+      
       <div className="bg-[#1a1a1a] p-4 rounded shadow mb-6">
         <h3 className="font-semibold mb-2">Expenses by Category</h3>
         <ResponsiveContainer width="100%" height={300}>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
         </ResponsiveContainer>
       </div>
 
-      {/* Bar Chart */}
+      
       <div className="bg-[#1a1a1a] p-4 rounded shadow">
         <h3 className="font-semibold mb-2">Monthly Spending</h3>
         <ResponsiveContainer width="100%" height={300}>
