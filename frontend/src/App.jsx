@@ -1,35 +1,53 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import LoginPage from "./features/auth/LoginPage";
+import SignupPage from "./features/auth/SignupPage";
+import ExpensesPage from "./features/expenses/ExpensesPage";
+import NewExpensePage from "./features/expenses/NewExpensePage";
+import EditExpensePage from "./features/expenses/EditExpensePage";
+import IncomesPage from "./features/incomes/IncomesPage";
+import NewIncomePage from "./features/incomes/NewIncomePage";
+import EditIncomePage from "./features/incomes/EditIncomePage";
+import DashboardPage from "./features/dashboard/DashboardPage";
+import CategoriesPage from "./features/categories/CategoriesPage";
+import NewCategoryPage from "./features/categories/NewCategoryPage";
+import EditCategoryPage from "./features/categories/EditCategoryPage";
+import UserProfilePage from "./features/profile/UserProfilePage";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const token = localStorage.getItem("token");
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="">
+        <Routes>
+          
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+
+        
+          {token ? (
+            <>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/expenses" element={<ExpensesPage />} />
+              <Route path="/expenses/new" element={<NewExpensePage />} />
+              <Route path="/expenses/:id/edit" element={<EditExpensePage />} />
+              <Route path="/incomes" element={<IncomesPage />} />
+              <Route path="/incomes/new" element={<NewIncomePage />} />
+              <Route path="/incomes/:id/edit" element={<EditIncomePage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
+              <Route path="/categories/new" element={<NewCategoryPage />} />
+              <Route path="/categories/:id/edit" element={<EditCategoryPage />} />
+              <Route path="/profile" element={<UserProfilePage />} />
+            </>
+          ) : (
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          )}
+        </Routes>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
