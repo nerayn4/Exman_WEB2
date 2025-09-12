@@ -1,30 +1,26 @@
-import mongoose from "mongoose";
+import { DataTypes } from "sequelize";
 import bcrypt from "bcryptjs";
+import sequelize from "../db.js";
 
-const userSchema = new mongoose.Schema(
-  {
-    email: { 
-      type: String, 
-      required: [true, "Email requis"], 
-      unique: true, 
-      match: [/\S+@\S+\.\S+/, "Email invalide"]
-    },
-    password: { type: String, required: [true, "Mot de passe requis"] },
-    darkMode: { type: Boolean, default: false },
-  },
-  { timestamps: true }
-);
-
-
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+const User = sequelize.define("User", {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
+  password: { type: DataTypes.STRING, allowNull: false },
+  darkMode: { type: DataTypes.BOOLEAN, defaultValue: false },
+}, {
+  tableName: "users",
+  timestamps: true,
 });
 
+// Hook avant création pour hasher le mot de passe
+User.beforeCreate(async (user) => {
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
+});
 
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+// Méthode d'instance pour vérifier le mot de passe
+User.prototype.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
-export default mongoose.model("User", userSchema);
+export default User;

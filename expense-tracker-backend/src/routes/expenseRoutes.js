@@ -5,8 +5,11 @@ import * as expenseController from "../controllers/expenseController.js";
 import { uploadReceipt } from "../utils/upload.js";
 
 const router = express.Router();
+
+// Protection de toutes les routes
 router.use(protect);
 
+// Routes CRUD pour les dépenses
 router.get("/", expenseController.getExpenses);
 router.post("/", uploadReceipt, expenseController.createExpense);
 router.get("/:id", expenseController.getExpense);

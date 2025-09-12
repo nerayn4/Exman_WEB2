@@ -1,6 +1,8 @@
 // models/dashboardCalculations.js
-const Expense = require('../models/expense');
-const Income = require('../models/income');
+import { Op, fn, col, literal } from 'sequelize';
+import Expense from './Expense.js';
+import Income from './Income.js';
+import Category from './Category.js';
 
 const dashboardCalculations = {
 
@@ -10,30 +12,58 @@ const dashboardCalculations = {
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
 
-      // Totaux et moyennes pour dépenses et revenus
-      const [expensesAgg, incomesAgg] = await Promise.all([
-        Expense.aggregate([
-          { $match: { userId, date: { $gte: start, $lte: end } } },
-          { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 }, avg: { $avg: '$amount' } } }
-        ]),
-        Income.aggregate([
-          { $match: { userId, date: { $gte: start, $lte: end } } },
-          { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 }, avg: { $avg: '$amount' } } }
-        ])
-      ]);
+      // Totaux et moyennes pour dépenses
+      const expensesAgg = await Expense.findAll({
+        attributes: [
+          [fn('SUM', col('amount')), 'total'],
+          [fn('COUNT', col('id')), 'count'],
+          [fn('AVG', col('amount')), 'avg']
+        ],
+        where: {
+          userId,
+          date: { [Op.between]: [start, end] }
+        },
+        raw: true
+      });
 
-      const totalExpenses = expensesAgg[0]?.total || 0;
-      const totalIncomes = incomesAgg[0]?.total || 0;
+      const incomesAgg = await Income.findAll({
+        attributes: [
+          [fn('SUM', col('amount')), 'total'],
+          [fn('COUNT', col('id')), 'count'],
+          [fn('AVG', col('amount')), 'avg']
+        ],
+        where: {
+          userId,
+          date: { [Op.between]: [start, end] }
+        },
+        raw: true
+      });
+
+      const totalExpenses = parseFloat(expensesAgg[0]?.total || 0);
+      const totalIncomes = parseFloat(incomesAgg[0]?.total || 0);
       const balance = totalIncomes - totalExpenses;
 
       // Dépenses par catégorie
-      const byCategory = await Expense.aggregate([
-        { $match: { userId, date: { $gte: start, $lte: end } } },
-        { $lookup: { from: 'categories', localField: 'categoryId', foreignField: '_id', as: 'category' } },
-        { $unwind: '$category' },
-        { $group: { _id: '$categoryId', categoryName: { $first: '$category.name' }, total: { $sum: '$amount' }, count: { $sum: 1 } } },
-        { $sort: { total: -1 } }
-      ]);
+      const byCategory = await Expense.findAll({
+        attributes: [
+          'categoryId',
+          [fn('SUM', col('amount')), 'total'],
+          [fn('COUNT', col('id')), 'count']
+        ],
+        where: {
+          userId,
+          date: { [Op.between]: [start, end] }
+        },
+        include: [{
+          model: Category,
+          as: 'category',
+          attributes: ['name']
+        }],
+        group: ['categoryId', 'category.id'],
+        order: [[literal('total'), 'DESC']],
+        raw: true,
+        nest: true
+      });
 
       const alerts = await this.checkAlerts(userId, totalExpenses, totalIncomes, balance);
 
@@ -44,8 +74,14 @@ const dashboardCalculations = {
           days: Math.ceil((end - start) / (1000 * 60 * 60 * 24))
         },
         totals: { expenses: totalExpenses, incomes: totalIncomes, balance },
-        counts: { expenses: expensesAgg[0]?.count || 0, incomes: incomesAgg[0]?.count || 0 },
-        averages: { expense: expensesAgg[0]?.avg || 0, income: incomesAgg[0]?.avg || 0 },
+        counts: {
+          expenses: parseInt(expensesAgg[0]?.count || 0),
+          incomes: parseInt(incomesAgg[0]?.count || 0)
+        },
+        averages: {
+          expense: parseFloat(expensesAgg[0]?.avg || 0),
+          income: parseFloat(incomesAgg[0]?.avg || 0)
+        },
         byCategory,
         alerts
       };
@@ -93,13 +129,21 @@ const dashboardCalculations = {
   async checkUpcomingRecurringExpenses(userId) {
     try {
       const today = new Date();
-      const upcoming = await Expense.find({
-        userId,
-        type: 'recurring',
-        $or: [{ endDate: { $gte: today } }, { endDate: { $exists: false } }]
-      }).populate('categoryId', 'name');
+      const upcoming = await Expense.findAll({
+        where: {
+          userId,
+          type: 'recurring',
+          [Op.or]: [
+            { endDate: { [Op.gte]: today } },
+            { endDate: null }
+          ]
+        },
+        include: [{ model: Category, as: 'category', attributes: ['name'] }],
+        order: [['date', 'ASC']],
+        limit: 5
+      });
 
-      return upcoming.slice(0, 5);
+      return upcoming;
     } catch (error) {
       console.error('Error fetching recurring expenses:', error);
       return [];
@@ -114,4 +158,4 @@ const dashboardCalculations = {
 
 };
 
-module.exports = dashboardCalculations;
+export default dashboardCalculations;

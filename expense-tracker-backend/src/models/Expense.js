@@ -1,14 +1,27 @@
-import mongoose from "mongoose";
+// src/models/Expense.js
+import { DataTypes } from 'sequelize';
+import sequelize from '../db.js';
+import User from './user.js';
+import Category from './category.js';
 
-const expenseSchema = new mongoose.Schema({
-  amount: { type: Number, required: true, min: 0 },
-  date: { type: Date, required: function() { return this.type === "one-time"; } }, // obligatoire pour one-time
-  categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
-  description: { type: String, default: "" },
-  type: { type: String, enum: ["one-time", "recurring"], default: "one-time" },
-  startDate: { type: Date, required: function() { return this.type === "recurring"; } }, // obligatoire pour recurring
-  endDate: { type: Date }, // optionnel
-  receipt: { type: String } // chemin du fichier
-}, { timestamps: true });
+const Expense = sequelize.define('Expense', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  amount: { type: DataTypes.DECIMAL(12,2), allowNull: false },
+  date: { type: DataTypes.DATEONLY },
+  description: { type: DataTypes.TEXT, defaultValue: '' },
+  type: { type: DataTypes.ENUM('one-time','recurring'), defaultValue: 'one-time' },
+  startDate: { type: DataTypes.DATEONLY },
+  endDate: { type: DataTypes.DATEONLY },
+  receipt: { type: DataTypes.STRING },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
+  categoryId: { type: DataTypes.INTEGER, allowNull: true },
+}, {
+  tableName: 'expenses',
+  timestamps: true,
+});
 
-export default mongoose.model("Expense", expenseSchema);
+// Associations
+Expense.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Expense.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' });
+
+export default Expense;

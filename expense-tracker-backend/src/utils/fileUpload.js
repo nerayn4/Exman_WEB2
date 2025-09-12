@@ -1,28 +1,73 @@
+// src/controllers/receiptController.js
+import Expense from '../models/expense.js';
+import fs from 'fs';
+import path from 'path';
 
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+// UPLOAD D'UN REÇU
+export const uploadReceipt = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findByPk(id);
 
-const uploadDir = 'uploads/receipts';
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    if (!expense) return res.status(404).json({ message: 'Dépense non trouvée' });
+    if (expense.userId !== req.user.id)
+      return res.status(403).json({ message: "Vous n'avez pas accès à cette dépense" });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+    // Supprimer l'ancien fichier si présent
+    if (expense.receipt) {
+      const oldPath = path.join(process.cwd(), 'uploads', 'receipts', expense.receipt);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
 
-const fileFilter = (req, file, cb) => {
-  if (['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Seuls JPG, PNG et PDF sont autorisés'), false);
+    // Sauvegarder le nouveau reçu
+    expense.receipt = req.file.filename;
+    await expense.save();
+
+    res.json({ success: true, message: 'Reçu uploadé', receipt: expense.receipt });
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur serveur', error: err.message });
   }
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+// RÉCUPÉRER LE REÇU
+export const getReceipt = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findByPk(id);
 
+    if (!expense || expense.userId !== req.user.id)
+      return res.status(404).json({ message: 'Reçu non trouvé' });
 
-export const uploadReceipt = upload.single('receipt');
+    if (!expense.receipt)
+      return res.status(404).json({ message: 'Aucun reçu associé à cette dépense' });
+
+    const filePath = path.join(process.cwd(), 'uploads', 'receipts', expense.receipt);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Fichier introuvable' });
+
+    res.sendFile(filePath);
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur serveur', error: err.message });
+  }
+};
+
+// SUPPRIMER LE REÇU
+export const deleteReceipt = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await Expense.findByPk(id);
+
+    if (!expense || expense.userId !== req.user.id)
+      return res.status(404).json({ message: 'Dépense non trouvée' });
+
+    if (expense.receipt) {
+      const filePath = path.join(process.cwd(), 'uploads', 'receipts', expense.receipt);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      expense.receipt = null;
+      await expense.save();
+    }
+
+    res.json({ success: true, message: 'Reçu supprimé' });
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur serveur', error: err.message });
+  }
+};

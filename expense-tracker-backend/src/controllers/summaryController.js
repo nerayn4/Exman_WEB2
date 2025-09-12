@@ -1,30 +1,40 @@
-import Expense from "../models/expense.js";
-import Income from "../models/income.js";
-import mongoose from "mongoose";
+// src/controllers/summaryController.js
+import { Expense, Income } from "../models/index.js";
+import { Op } from "sequelize";
 
 export const getMonthlySummary = async (req, res) => {
-  const date = req.query.month ? new Date(req.query.month) : new Date();
-  const start = new Date(date.getFullYear(), date.getMonth(), 1);
-  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
-
   try {
-    const expenses = await Expense.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(req.user._id), date: { $gte: start, $lte: end } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
+    const date = req.query.month ? new Date(req.query.month) : new Date();
+    const start = new Date(date.getFullYear(), date.getMonth(), 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const incomes = await Income.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(req.user._id), date: { $gte: start, $lte: end } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
+    // Total dépenses
+    const totalExpensesResult = await Expense.findAll({
+      attributes: [[Expense.sequelize.fn("SUM", Expense.sequelize.col("amount")), "total"]],
+      where: {
+        userId: req.user.id,
+        date: { [Op.between]: [start, end] },
+      },
+    });
+    const totalExpenses = parseFloat(totalExpensesResult[0].get("total")) || 0;
+
+    // Total revenus
+    const totalIncomesResult = await Income.findAll({
+      attributes: [[Income.sequelize.fn("SUM", Income.sequelize.col("amount")), "total"]],
+      where: {
+        userId: req.user.id,
+        date: { [Op.between]: [start, end] },
+      },
+    });
+    const totalIncomes = parseFloat(totalIncomesResult[0].get("total")) || 0;
 
     res.json({
       success: true,
       data: {
-        totalExpenses: expenses[0]?.total || 0,
-        totalIncomes: incomes[0]?.total || 0,
-        balance: (incomes[0]?.total || 0) - (expenses[0]?.total || 0)
-      }
+        totalExpenses,
+        totalIncomes,
+        balance: totalIncomes - totalExpenses,
+      },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

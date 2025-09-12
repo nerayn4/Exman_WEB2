@@ -1,6 +1,6 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
-const summaryValidation = {
+export const summaryValidation = {
   monthlySummary: (req, res, next) => {
     const { month } = req.query;
     if (month) {
@@ -33,5 +33,3 @@ const summaryValidation = {
     next();
   }
 };
-
-module.exports = summaryValidation;
