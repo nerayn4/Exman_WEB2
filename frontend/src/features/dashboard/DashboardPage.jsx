@@ -16,18 +16,17 @@ import {
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState({
-    incomes: 0,
-    expenses: 0,
+    totalIncome: 0,
+    totalExpenses: 0,
     balance: 0,
     expensesByCategory: [],
-    monthlySpending: [], 
+    monthlySpending: [],
   });
 
   const [alert, setAlert] = useState(null);
 
   const [filters, setFilters] = useState({
-    month: new Date().getMonth() + 1, 
-    year: new Date().getFullYear(),
+    month: new Date().toISOString().slice(0, 7), // ex: "2025-09"
     startDate: "",
     endDate: "",
     category: "",
@@ -39,22 +38,33 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchSummary() {
       try {
+        const [year, month] = filters.month.split("-");
+
         const res = await fetch(
-          `http://localhost:5000/api/summary/monthly?month=${filters.month}&year=${filters.year}`,
+          `http://localhost:5000/api/summary/monthly?year=${year}&month=${month}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
-        console.log("summary API response:", data); 
-        setSummary((prev) => ({
-          ...prev,
-          ...data,
-        }));
+
+        setSummary({
+          totalIncome: data.incomes || 0,
+          totalExpenses: data.expenses || 0,
+          balance: data.balance || 0,
+          expensesByCategory: data.expensesByCategory || [],
+          monthlySpending: [
+            {
+              month: filters.month,
+              income: data.incomes || 0,
+              expenses: data.expenses || 0,
+            },
+          ],
+        });
       } catch (err) {
         console.error("Erreur summary:", err);
       }
     }
     fetchSummary();
-  }, [filters.month, filters.year]);
+  }, [filters.month]);
 
   useEffect(() => {
     async function fetchAlerts() {
@@ -80,34 +90,33 @@ export default function DashboardPage() {
         <div className="bg-red-600 text-white p-3 rounded mb-4">{alert}</div>
       )}
 
+      {/* Résumé */}
       <div className="grid md:grid-cols-3 gap-6 mb-6">
         <div className="bg-[#1a1a1a] p-4 rounded shadow">
-          Income: ${summary.incomes}
+          Income: ${summary.totalIncome}
         </div>
         <div className="bg-[#1a1a1a] p-4 rounded shadow">
-          Expenses: ${summary.expenses}
+          Expenses: ${summary.totalExpenses}
         </div>
         <div className="bg-[#1a1a1a] p-4 rounded shadow">
           Balance: ${summary.balance}
         </div>
       </div>
 
+      {/* Dépenses par catégorie */}
       <div className="bg-[#1a1a1a] p-4 rounded shadow mb-6">
         <h3 className="font-semibold mb-2">Expenses by Category</h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
-              dataKey="total" 
-              data={summary.expensesByCategory || []}
+              dataKey="value"
+              data={summary.expensesByCategory}
               cx="50%"
               cy="50%"
               outerRadius={100}
-              fill="#D4AF37"
-              label={(entry) =>
-                entry.Category ? entry.Category.name : "Unknown"
-              }
+              label
             >
-              {(summary.expensesByCategory || []).map((entry, index) => (
+              {summary.expensesByCategory.map((entry, index) => (
                 <Cell
                   key={index}
                   fill={["#D4AF37", "#FFD700", "#B8860B"][index % 3]}
@@ -119,10 +128,11 @@ export default function DashboardPage() {
         </ResponsiveContainer>
       </div>
 
+      {/* Revenus/Dépenses par mois */}
       <div className="bg-[#1a1a1a] p-4 rounded shadow">
         <h3 className="font-semibold mb-2">Monthly Spending</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={summary.monthlySpending || []}>
+          <BarChart data={summary.monthlySpending}>
             <CartesianGrid strokeDasharray="3 3" stroke="#444" />
             <XAxis dataKey="month" stroke="#D4AF37" />
             <YAxis stroke="#D4AF37" />
