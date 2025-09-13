@@ -16,17 +16,18 @@ import {
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState({
-    totalIncome: 0,
-    totalExpenses: 0,
+    incomes: 0,
+    expenses: 0,
     balance: 0,
     expensesByCategory: [],
-    monthlySpending: [],
+    monthlySpending: [], 
   });
 
   const [alert, setAlert] = useState(null);
 
   const [filters, setFilters] = useState({
-    month: new Date().toISOString().slice(0, 7),
+    month: new Date().getMonth() + 1, 
+    year: new Date().getFullYear(),
     startDate: "",
     endDate: "",
     category: "",
@@ -39,10 +40,11 @@ export default function DashboardPage() {
     async function fetchSummary() {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/summary/monthly?month=${filters.month}`,
+          `http://localhost:5000/api/summary/monthly?month=${filters.month}&year=${filters.year}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
+        console.log("summary API response:", data); 
         setSummary((prev) => ({
           ...prev,
           ...data,
@@ -52,7 +54,7 @@ export default function DashboardPage() {
       }
     }
     fetchSummary();
-  }, [filters.month]);
+  }, [filters.month, filters.year]);
 
   useEffect(() => {
     async function fetchAlerts() {
@@ -80,29 +82,30 @@ export default function DashboardPage() {
 
       <div className="grid md:grid-cols-3 gap-6 mb-6">
         <div className="bg-[#1a1a1a] p-4 rounded shadow">
-          Income: ${summary.totalIncome}
+          Income: ${summary.incomes}
         </div>
         <div className="bg-[#1a1a1a] p-4 rounded shadow">
-          Expenses: ${summary.totalExpenses}
+          Expenses: ${summary.expenses}
         </div>
         <div className="bg-[#1a1a1a] p-4 rounded shadow">
           Balance: ${summary.balance}
         </div>
       </div>
 
-      
       <div className="bg-[#1a1a1a] p-4 rounded shadow mb-6">
         <h3 className="font-semibold mb-2">Expenses by Category</h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
-              dataKey="value"
+              dataKey="total" 
               data={summary.expensesByCategory || []}
               cx="50%"
               cy="50%"
               outerRadius={100}
               fill="#D4AF37"
-              label
+              label={(entry) =>
+                entry.Category ? entry.Category.name : "Unknown"
+              }
             >
               {(summary.expensesByCategory || []).map((entry, index) => (
                 <Cell
@@ -116,7 +119,6 @@ export default function DashboardPage() {
         </ResponsiveContainer>
       </div>
 
-      
       <div className="bg-[#1a1a1a] p-4 rounded shadow">
         <h3 className="font-semibold mb-2">Monthly Spending</h3>
         <ResponsiveContainer width="100%" height={300}>

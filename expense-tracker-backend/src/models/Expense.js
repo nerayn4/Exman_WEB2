@@ -19,7 +19,7 @@ const Expense = sequelize.define('Expense', {
     allowNull: false,
   },
   type: {
-    type: DataTypes.STRING, // one-time, recurring, etc.
+    type: DataTypes.STRING, 
   },
   receiptPath: {
     type: DataTypes.STRING,
