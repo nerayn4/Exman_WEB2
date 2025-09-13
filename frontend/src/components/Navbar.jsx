@@ -31,7 +31,7 @@ export default function Navbar() {
                 {open && (
                   <div className="absolute mt-2 bg-[#1a1a1a] text-[#D4AF37] rounded-md shadow-lg w-48 z-50 border border-[#333]">
                     {[
-                      { label: "Dashboard", path: "/dashboard" },
+                      { label: "Dashboard", path: "/" },
                       { label: "Expenses", path: "/expenses" },
                       { label: "Incomes", path: "/incomes" },
                       { label: "Categories", path: "/categories" },
